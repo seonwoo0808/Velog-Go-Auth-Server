@@ -1,0 +1,53 @@
+version: "3.7"
+
+networks:
+  main_net:
+    # name: main_main_net
+    # external: true
+    driver: bridge
+  back_net:
+    driver: bridge
+
+services:
+  buildin-auth:
+    container_name: buildin-auth-server-velog
+    image: buildin-auth-velog:latest
+    networks:
+      - main_net
+      - back_net
+    env_file:
+      - .env
+    ports:
+      - ${WAS_PORT}:${WAS_PORT}
+    depends_on:
+      - postgres
+    restart: always
+  postgres:
+    container_name: ${POSTGRES_HOST}
+    image: postgres:alpine
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    env_file: .env
+    environment:
+      TZ: Asia/Seoul
+    restart: always
+    networks:
+      - back_net
+  redis:
+    image: redis:alpine
+    container_name: ${REDIS_HOST}
+    command: redis-server --requirepass ${REDIS_PASSWORD} --port ${REDIS_PORT}
+    labels:
+      - "name=redis"
+      - "mode=standalone"
+    volumes:
+      - ./redis/data:/data
+      - ./redis/conf/redis.conf:/usr/local/conf/redis.conf
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+    env_file:
+      - .env
+    networks:
+      - back_net
